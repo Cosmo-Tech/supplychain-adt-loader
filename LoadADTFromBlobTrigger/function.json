@@ -1,0 +1,12 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "name": "myblob",
+      "type": "blobTrigger",
+      "direction": "in",
+      "path": "%INPUT_STORAGE_CONTAINER%/{name}.xlsx",
+      "connection": "INPUT_STORAGE_CONNECTION"
+    }
+  ]
+}
