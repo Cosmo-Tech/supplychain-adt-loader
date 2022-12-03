@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import tempfile
+import uuid
 
 import azure.functions as func
 from Supplychain.Generic.adt_writer import ADTWriter
@@ -28,7 +29,7 @@ def __sanitize_adt_id(input: str) -> str:
     """
     return re.sub("[^0-9a-zA-Z]+", "_", input)
     
-def convert(input_folder: str, for_adt: bool = True) -> MemoryFolderIO:
+def convert(input_folder: str, for_adt: bool = True, for_queue: bool = False) -> MemoryFolderIO:
     with Timer("[Convert dataset]") as t:
         dataset = ExcelReader(input_folder=input_folder, keep_nones=False)
         t.split("Read dataset")
@@ -84,7 +85,9 @@ def convert(input_folder: str, for_adt: bool = True) -> MemoryFolderIO:
                         if new_column not in entity and original_column in entity:
                             entity[new_column] = __sanitize_adt_id(entity[original_column])
                             del entity[original_column]
-
+                    if for_queue and "$sourceId" in entity and "$targetId" in entity and "$relationshipId" not in entity:
+                        entity.setdefault('$relationshipId', str(uuid.uuid1()))
+                        entity["relationship"] = entity.copy() # dt injector requires a relationship member
         t.split("Convert to dict")
         return intermediate
 
@@ -102,7 +105,7 @@ def direct_to_adt(input_folder: str, force_purge: bool):
 def to_storage_queue(input_folder: str,
                      connection_str: str,
                      queue_name: str):
-    intermediate = convert(input_folder)
+    intermediate = convert(input_folder, for_queue = True)
     with Timer("[Send to queue]") as t:
         queue_writer = QueueWriter(connection_str,
                                    queue_name)
