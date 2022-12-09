@@ -1,14 +1,14 @@
+import json
 import logging
 import os
 import re
 import tempfile
+import typing
 import uuid
 
 import azure.functions as func
-from Supplychain.Generic.adt_writer import ADTWriter
 from Supplychain.Generic.excel_folder_reader import ExcelReader
 from Supplychain.Generic.memory_folder_io import MemoryFolderIO
-from Supplychain.Generic.storage_queue_writer import QueueWriter
 from Supplychain.Transform.from_table_to_dict import write_transformed_data
 from Supplychain.Generic.timer import Timer
 
@@ -91,31 +91,7 @@ def convert(input_folder: str, for_adt: bool = True, for_queue: bool = False) ->
         t.split("Convert to dict")
         return intermediate
 
-def direct_to_adt(input_folder: str, force_purge: bool):
-    intermediate = convert(input_folder)
-    with Timer("[Send to ADT]") as t:
-        adt_writer = ADTWriter(force_purge=force_purge)
-        for table_name in messages_order:
-            table_content = intermediate.files.get(table_name, list())
-            adt_writer.send_items(items=table_content)
-            t.display_message(f"Sent {table_name}")
-        t.display_message("Send to ADT")
-
-
-def to_storage_queue(input_folder: str,
-                     connection_str: str,
-                     queue_name: str):
-    intermediate = convert(input_folder, for_queue = True)
-    with Timer("[Send to queue]") as t:
-        queue_writer = QueueWriter(connection_str,
-                                   queue_name)
-        for table_name in messages_order:
-            table_content = intermediate.files.get(table_name, list())
-            queue_writer.send_items(items=table_content)
-            t.display_message(f"Sent {table_name}")
-        t.display_message("Send to queue")
-
-def main(myblob: func.InputStream):
+def main(myblob: func.InputStream, msg: func.Out[typing.List[str]]):
 
     head, filename = os.path.split(myblob.name)
     logging.info(f"Python blob trigger function processed blob \n"
@@ -126,24 +102,13 @@ def main(myblob: func.InputStream):
     with open(os.path.join(input_folder, filename), 'wb') as input_file:
          input_file.write(myblob.read())
 
-    output_mode = os.environ.get("OUTPUT_MODE", None)
-
-    
-    if output_mode == "queue":
-        queue_connection = os.environ.get("QUEUE_STORAGE_CONNECTION", None)
-        queue_name = os.environ.get("QUEUE_STORAGE_NAME", None)
-        if not queue_connection or not queue_name:
-            raise Exception(f"Configuration issue !\n"
-                 f"Provide parameter for 'QUEUE_STORAGE_CONNECTION' and 'QUEUE_STORAGE_NAME' when 'OUTPUT_MODE' is 'queue'.\n")
-        to_storage_queue(input_folder, queue_connection, queue_name)
-
-    elif output_mode == "adt":
-        adt_force_purge = bool(os.environ.get("AZURE_DIGITAL_TWINS_PURGE_BEFORE_LOAD", False))
-        if "AZURE_DIGITAL_TWINS_URL" not in os.environ:
-            raise Exception(f"Configuration issue ! 'AZURE_DIGITAL_TWINS_URL' not provided .")
-        direct_to_adt(input_folder, adt_force_purge)
-
-    else:
-        raise Exception(f"Configuration issue !\n"
-                 f"'OUTPUT_MODE' not configured properly.\n"
-                 f"Set 'queue' or 'adt'.\n")
+    msg_list = []
+    intermediate = convert(input_folder, for_queue = True)
+    for table_name in messages_order:
+        table_content = intermediate.files.get(table_name, list())
+        
+        total_messages = len(table_content)
+        for item in table_content:
+            message = json.dumps(item, separators=(',', ':'))
+            msg_list.append(message)
+    msg.set(msg_list)  

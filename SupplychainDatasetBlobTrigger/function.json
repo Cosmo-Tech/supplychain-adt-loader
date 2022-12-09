@@ -7,6 +7,13 @@
       "direction": "in",
       "path": "%INPUT_STORAGE_CONTAINER%/{name}.xlsx",
       "connection": "INPUT_STORAGE_CONNECTION"
+    },
+    {
+      "type": "queue",
+      "direction": "out",
+      "name": "msg",
+      "queueName": "%OUTPUT_STORAGE_QUEUE_NAME%",
+      "connection": "OUTPUT_STORAGE_CONNECTION"
     }
   ]
 }
