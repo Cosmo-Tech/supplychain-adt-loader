@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  build_release:
+    name: build_relase
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v3
+
+      - name: 'Get the version'
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }} Environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 'Install dependencies'
+        run: pip install --target .python_packages/lib/site-packages/ -r requirements.txt
+
+      - name: 'Make artifact'
+        run: zip -r artifact.zip . -x ".git/*" ".github/*" ".gitignore"
+
+      - name: Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          draft: true
+          prerelease: false
+          release_name: ${{ github.ref }}
+          tag_name: ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: upload artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifact.zip
+          asset_name: artifact.zip
+          asset_content_type: application/gzip
