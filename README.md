@@ -40,20 +40,3 @@ This Azure function is intended to process a Cosmo Tech Supply Chain dataset in 
 <br>
 
 
-## Permissions
-
-In order for the azure function to **receive data to the input storage container** : 
-- Set Azure Function > Settings > Identity > System assigned > Status = ON
-- The Azure function identity has to be declared as `Storage Blob Data Reader`
-Or put a valid `AccountKey` for the parameter `INTPUT_STORAGE_CONNECTION`
-
-
-In order for the azure function to **send data to the output storage queue** : 
-- Set Azure Function > Settings > Identity > System assigned > Status = ON
-- The Azure function identity has to be declared as `Storage Queue Data Message Sender`
-Or put a valid `AccountKey` for the parameter `OUTPUT_STORAGE_CONNECTION`
-<br>
-<br>
-
-
-
