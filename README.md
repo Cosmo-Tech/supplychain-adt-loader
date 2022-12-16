@@ -34,8 +34,8 @@ This Azure function is intended to process a Cosmo Tech Supply Chain dataset in 
 * **INPUT_STORAGE_CONNECTION** : connection string of the input Azure Storage account
 * **INPUT_STORAGE_CONTAINER** : BLOB container name in the input Storage
 
-* **OUTPUT_STORAGE_QUEUE_NAME** : connection string of the output Azure Storage account
-* **OUTPUT_STORAGE_QUEUE_NAME** : Queue name in the output Storage (dt injector inpout queue)
+* **OUTPUT_STORAGE_QUEUE_NAME** : connection string of the output Azure Storage account (parameter JSON_STORAGE_CONNECTION of the DT Injector)
+* **OUTPUT_STORAGE_QUEUE_NAME** : Queue name in the output Storage (parameter JSON_STORAGE_QUEUE of the DT Injector)
 <br>
 <br>
 
