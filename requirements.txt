@@ -3,4 +3,4 @@
 # Manually managing azure-functions-worker may cause unexpected issues
 
 azure-functions
-CosmoTech-SupplyChain==3.2.0
+CosmoTech-SupplyChain==4.0.0.1
